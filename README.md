@@ -1,13 +1,15 @@
 # DrissionPage MCP
 
-[![PyPI](https://img.shields.io/badge/pypi-drissionpage--mcp-blue)](https://pypi.org/project/drissionpage-mcp/)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-orange)](https://modelcontextprotocol.io/)
+[![Status](https://img.shields.io/badge/status-source--only-yellow)](#-quick-start)
 
 > A lean [Model Context Protocol](https://modelcontextprotocol.io/) server that gives LLM agents a browser, powered by [DrissionPage](https://github.com/g1879/DrissionPage). Alternative to `chrome-devtools-mcp` and `playwright-mcp` with a smaller surface area and Chinese-friendly defaults.
 
 基于 [DrissionPage](https://github.com/g1879/DrissionPage) 的浏览器自动化 MCP Server。**31 个核心工具**，覆盖浏览器/标签页/导航/元素/JS/CDP/网络监听/截图，适合 LLM Agent 驱动真实 Chromium 完成网页操作、抓取、调试与逆向。
+
+> ⚠️ **当前仅源码安装**：PyPI 上的 `drissionpage-mcp` 包名已被另一个无关项目（`jumodada/DrissionMCP`）占用，本项目尚未发布到 PyPI。请按下面的源码方式安装，不要 `pip install drissionpage-mcp`。
 
 ---
 
@@ -23,13 +25,7 @@
 
 ## 🚀 Quick Start
 
-### 安装
-
-```bash
-pip install drissionpage-mcp
-```
-
-源码安装：
+### 安装（源码）
 
 ```bash
 git clone https://github.com/2836603852/drissionpage-mcp.git
@@ -37,9 +33,11 @@ cd drissionpage-mcp
 pip install -e .
 ```
 
+安装完会在 PATH 注册一个 CLI 命令 `drissionpage-mcp`，这就是 MCP 客户端要拉起的可执行文件。
+
 ### 在 MCP 客户端中配置
 
-**Claude Code / Cursor / Codex 等**（`mcp.json`）：
+**Claude Desktop / Claude Code / Cursor / Cline / Continue 等**（`mcp.json` 或客户端等价位置）：
 
 ```json
 {
@@ -98,27 +96,38 @@ drissionpage-mcp [--debug-port PORT | --auto-port]
 
 ## 💡 推荐工作流
 
-```python
+> 下面是 LLM Agent 通过 MCP 协议依次发起的**工具调用**伪代码，不是 Python SDK。
+> 实际由客户端（Claude Desktop / Cursor 等）通过 stdio JSON-RPC 与 server 通信。
+
+```text
 # 1. 检查当前实例是否已有浏览器
-dp_list_browsers()
+call dp_list_browsers
 
 # 2a. 没有：新建一个
-dp_new_browser()
+call dp_new_browser
 
 # 2b. 已有：直接复用返回里的 browser_id
 
 # 3. 操作页面
-dp_navigate({"url": "https://example.com"})
-dp_wait_doc_loaded()
-dp_click({"locator": "button:登录"})
+call dp_navigate         {"url": "https://example.com"}
+call dp_wait_doc_loaded
+call dp_click            {"locator": "text:登录"}
 
 # 4. 抓接口
-dp_capture_api({
-  "url_pattern": "/api/user/profile",
-  "method": "GET",
-  "timeout": 10
-})
+call dp_capture_api      {"url_pattern": "/api/user/profile",
+                          "method": "GET", "timeout": 10}
 ```
+
+### Locator 语法（来自 DrissionPage）
+
+| 写法 | 含义 |
+|---|---|
+| `#submit` | id 选择器 |
+| `.btn-primary` | class 选择器 |
+| `text:登录` | 包含文本"登录"的元素 |
+| `tag:button@text()=登录` | tag + 属性/文本组合 |
+| `xpath://div[@class="x"]` | XPath |
+| `css:div > a` | CSS selector |
 
 ## 🧪 开发
 
@@ -133,6 +142,13 @@ python -m py_compile src/drissionpage_mcp/*.py src/drissionpage_mcp/tools/*.py
 # 跑测试
 python -m pytest -q
 ```
+
+## 🗺 Roadmap
+
+- [ ] 申请独立 PyPI 包名（候选：`drissionpage-mcp-server`），让 `pip install` 可用
+- [ ] 支持 streamable HTTP transport（FastMCP 原生支持，只需 CLI 加 `--transport http`）
+- [ ] 补单元测试到工具级（目前只覆盖 helpers，工具行为依赖手测）
+- [ ] CI（GitHub Actions：lint + test）
 
 ## 🤝 Contributing
 
