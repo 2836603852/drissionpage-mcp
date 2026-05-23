@@ -2,6 +2,7 @@
 """Unit tests for BrowserManager port-binding behavior."""
 
 import socket
+
 import pytest
 
 from drissionpage_mcp.browser_manager import BrowserManager

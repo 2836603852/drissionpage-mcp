@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "drissionpage-mcp"
-version = "1.0.0"
+name = "drissionpage-mcp-server"
+version = "1.1.0"
 description = "MCP server for DrissionPage browser automation - Alternative to Chrome DevTools MCP and Playwright MCP"
 readme = "README.md"
 license = {text = "MIT"}
@@ -61,4 +61,9 @@ target-version = ['py38', 'py39', 'py310', 'py311']
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I"]
+# Line-length (E501) is handled by black; ruff would flag long
+# Pydantic Field(..., description="...") lines that black keeps single-line.
+ignore = ["E501"]

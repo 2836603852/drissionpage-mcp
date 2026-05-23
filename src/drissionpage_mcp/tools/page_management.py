@@ -3,13 +3,12 @@
 DrissionPage MCP Page Management Tools
 """
 
-from typing import Optional, Union, List, Dict, Any, Callable, Literal
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
+
 from pydantic import BaseModel, Field
 
 from ..browser_manager import browser_manager
-from ..exceptions import BrowserNotConnectedError
 from ._common import get_session, get_tab, resolve_tab_id, tool_handler
-
 
 # ============ Parameter Models ============
 
@@ -136,15 +135,17 @@ def _wait_to_result(ok: bool, event: str, timeout: float, extra: Optional[Dict[s
     return payload
 
 
-def _run_on_active_tab(browser_id: Optional[str], action: Callable, **extra) -> Dict[str, Any]:
-    """Resolve session + active tab, invoke action(tab), refresh tracking, return payload.
+def _run_on_active_tab(browser_id: Optional[str], task: Callable, **extra) -> Dict[str, Any]:
+    """Resolve session + active tab, invoke ``task(tab)``, refresh tracking, return payload.
 
-    ``action`` should perform one navigation-style call on ``tab`` (no return value
+    ``task`` should perform one navigation-style call on ``tab`` (no return value
     needed). Returns a dict including ``url`` plus any ``extra`` fields supplied.
+    The parameter is named ``task`` (not ``action``) so callers can pass
+    ``action=...`` as part of ``extra`` without keyword collision.
     """
     session = get_session(browser_id)
     tab = get_tab(browser_id)
-    action(tab)
+    task(tab)
     session.update_tab_info()
     resolved_tab_id = resolve_tab_id(session, tab)
     if resolved_tab_id:

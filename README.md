@@ -1,5 +1,6 @@
 # DrissionPage MCP
 
+[![CI](https://github.com/2836603852/drissionpage-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/2836603852/drissionpage-mcp/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-orange)](https://modelcontextprotocol.io/)
@@ -9,7 +10,7 @@
 
 基于 [DrissionPage](https://github.com/g1879/DrissionPage) 的浏览器自动化 MCP Server。**31 个核心工具**，覆盖浏览器/标签页/导航/元素/JS/CDP/网络监听/截图，适合 LLM Agent 驱动真实 Chromium 完成网页操作、抓取、调试与逆向。
 
-> ⚠️ **当前仅源码安装**：PyPI 上的 `drissionpage-mcp` 包名已被另一个无关项目（`jumodada/DrissionMCP`）占用，本项目尚未发布到 PyPI。请按下面的源码方式安装，不要 `pip install drissionpage-mcp`。
+> ⚠️ **当前仅源码安装**：PyPI 上的 `drissionpage-mcp` 包名已被另一个无关项目（`jumodada/DrissionMCP`）占用。本项目的 PyPI 名计划为 `drissionpage-mcp-server`，尚未发布。**请按下面的源码方式安装，不要执行 `pip install drissionpage-mcp`**。
 
 ---
 
@@ -64,12 +65,28 @@ pip install -e .
 
 ```
 drissionpage-mcp [--debug-port PORT | --auto-port]
+                 [--transport stdio|http|sse|streamable-http]
+                 [--host HOST] [--port PORT]
 
+Chromium 调试端口（互斥）:
   --debug-port PORT   固定 Chromium 调试端口 (1-65535)，默认 9223
   --auto-port         启动时自动挑选空闲端口（与 --debug-port 互斥）
+
+MCP 传输层:
+  --transport         stdio (默认) / http / sse / streamable-http
+  --host              HTTP 模式下的绑定地址，默认 127.0.0.1
+  --port              HTTP 模式下的端口，默认 8000
 ```
 
 **默认 9223 的设计原因**：避免与用户手动起在 9222 的浏览器撞车。多实例并发时务必加 `--auto-port`。
+
+### HTTP 模式（远程客户端 / 容器化部署）
+
+```bash
+drissionpage-mcp --transport http --host 0.0.0.0 --port 8000
+```
+
+启动后 MCP 客户端通过 `http://<host>:8000/` 连接（具体端点取决于客户端实现）。stdio 模式下 `--host` / `--port` 会被忽略。
 
 ## 📐 端口规则
 
@@ -145,10 +162,12 @@ python -m pytest -q
 
 ## 🗺 Roadmap
 
-- [ ] 申请独立 PyPI 包名（候选：`drissionpage-mcp-server`），让 `pip install` 可用
-- [ ] 支持 streamable HTTP transport（FastMCP 原生支持，只需 CLI 加 `--transport http`）
-- [ ] 补单元测试到工具级（目前只覆盖 helpers，工具行为依赖手测）
-- [ ] CI（GitHub Actions：lint + test）
+- [x] 独立 PyPI 包名：`drissionpage-mcp-server`（v1.1.0，待发布）
+- [x] streamable HTTP transport（`--transport http`）
+- [x] 工具级 smoke 测试（`tests/test_tool_smoke.py`，8 用例）
+- [x] CI（GitHub Actions：pytest 矩阵 + ruff）
+- [ ] 发布到 PyPI
+- [ ] 工具调用示例集（`docs/recipes/`）
 
 ## 🤝 Contributing
 

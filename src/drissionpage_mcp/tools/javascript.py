@@ -3,11 +3,11 @@
 DrissionPage MCP JavaScript tools.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, Field
 
 from ._common import get_tab, tool_handler
-
 
 # ============ Parameter Models ============
 

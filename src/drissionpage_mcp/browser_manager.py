@@ -3,15 +3,16 @@
 DrissionPage MCP browser manager.
 """
 
-from typing import Dict, Optional, Any, List
-from DrissionPage import Chromium, ChromiumOptions
-from dataclasses import dataclass, field
-from threading import Lock
 import socket
 import sys
 import uuid
+from dataclasses import dataclass, field
+from threading import Lock
+from typing import Any, Dict, List, Optional
 
-from .config import Config, BrowserConfig
+from DrissionPage import Chromium, ChromiumOptions
+
+from .config import BrowserConfig, Config
 
 
 @dataclass

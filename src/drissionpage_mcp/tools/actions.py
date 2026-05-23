@@ -3,11 +3,11 @@
 DrissionPage MCP actions and dialog tools.
 """
 
-from typing import Optional, Literal
+from typing import Literal, Optional
+
 from pydantic import BaseModel, Field
 
 from ._common import get_tab, tool_handler
-
 
 # ============ Parameter Models ============
 

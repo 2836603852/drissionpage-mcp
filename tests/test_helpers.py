@@ -4,17 +4,14 @@
 import asyncio
 from types import SimpleNamespace
 
-import pytest
-
-from drissionpage_mcp.tools._common import tool_handler
-from drissionpage_mcp.tools.element_operations import _normalize_file_paths, _truncate
-from drissionpage_mcp.tools.network import _is_packet_valid, _parse_packet, _safe_listener_status
 from drissionpage_mcp.exceptions import (
     BrowserNotConnectedError,
     DrissionPageMcpError,
     ElementNotFoundError,
 )
-
+from drissionpage_mcp.tools._common import tool_handler
+from drissionpage_mcp.tools.element_operations import _normalize_file_paths, _truncate
+from drissionpage_mcp.tools.network import _is_packet_valid, _parse_packet, _safe_listener_status
 
 # ---------- element_operations helpers ----------
 

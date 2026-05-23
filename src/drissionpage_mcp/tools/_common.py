@@ -2,7 +2,7 @@
 """Shared helpers for tool modules."""
 
 import functools
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 from ..browser_manager import browser_manager
 from ..exceptions import BrowserNotConnectedError, DrissionPageMcpError

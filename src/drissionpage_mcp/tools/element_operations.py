@@ -3,15 +3,15 @@
 DrissionPage MCP Element Operations Tools
 """
 
-from typing import Optional, List, Literal, Union
 import re
 import time
 from html import unescape
+from typing import List, Literal, Optional, Union
+
 from pydantic import BaseModel, Field
 
 from ..exceptions import ElementNotFoundError
 from ._common import get_tab, tool_handler
-
 
 # ============ Parameter Models ============
 

@@ -4,9 +4,9 @@ DrissionPage MCP server entry point.
 """
 
 import argparse
+import sys
 from contextlib import asynccontextmanager
 from typing import Optional
-import sys
 
 # Try importing FastMCP from supported packages.
 try:
@@ -30,7 +30,6 @@ from .tools import (
     register_page_management_tools,
     register_screenshot_tools,
 )
-
 
 # Global runtime configuration.
 config: Optional[Config] = None
@@ -117,8 +116,10 @@ def _parse_cli_args(argv: Optional[list] = None) -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         prog="drissionpage-mcp",
-        description="DrissionPage MCP server (browser automation over stdio).",
+        description="DrissionPage MCP server (browser automation, stdio or HTTP).",
     )
+
+    # Chromium debug-port group (mutually exclusive)
     port_group = parser.add_mutually_exclusive_group()
     port_group.add_argument(
         "--debug-port",
@@ -140,6 +141,27 @@ def _parse_cli_args(argv: Optional[list] = None) -> argparse.Namespace:
             "MCP instances concurrently to avoid port collisions."
         ),
     )
+
+    # MCP transport group
+    parser.add_argument(
+        "--transport",
+        choices=("stdio", "http", "sse", "streamable-http"),
+        default="stdio",
+        help="MCP transport. Default 'stdio' for local clients; 'http' exposes the server over HTTP for remote clients.",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="HTTP host bind address (only used when --transport != stdio). Default 127.0.0.1.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        metavar="PORT",
+        help="HTTP port (only used when --transport != stdio). Default 8000.",
+    )
+
     return parser.parse_args(argv)
 
 
@@ -157,20 +179,32 @@ def main():
     args = _parse_cli_args()
 
     if args.auto_port:
-        port = _pick_free_port()
+        debug_port = _pick_free_port()
     else:
-        port = args.debug_port if args.debug_port is not None else DEFAULT_DEBUG_PORT
+        debug_port = args.debug_port if args.debug_port is not None else DEFAULT_DEBUG_PORT
 
-    if not (0 < port < 65536):
+    if not (0 < debug_port < 65536):
         print(
-            f"Error: --debug-port must be in range 1-65535, got {port}",
+            f"Error: --debug-port must be in range 1-65535, got {debug_port}",
             file=sys.stderr,
         )
         sys.exit(2)
-    _cli_debug_port = port
+    _cli_debug_port = debug_port
+
+    if args.transport != "stdio" and not (0 < args.port < 65536):
+        print(
+            f"Error: --port must be in range 1-65535, got {args.port}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     _register_all_tools()
-    mcp.run(show_banner=False)
+
+    if args.transport == "stdio":
+        mcp.run(show_banner=False)
+    else:
+        _log(f"[DrissionPage MCP] Serving over {args.transport} on {args.host}:{args.port}")
+        mcp.run(transport=args.transport, host=args.host, port=args.port, show_banner=False)
 
 
 if __name__ == "__main__":

@@ -3,14 +3,14 @@
 DrissionPage MCP network listening tools.
 """
 
-from typing import Optional, List, Union, Dict, Any
-from pydantic import BaseModel, Field
 import json
 import time
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field
 
 from ..exceptions import NetworkTimeoutError
 from ._common import get_tab, tool_handler
-
 
 # ============ Parameter Models ============
 

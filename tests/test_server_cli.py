@@ -52,6 +52,60 @@ def test_parse_cli_auto_port_and_debug_port_are_mutually_exclusive():
             server._parse_cli_args(["--auto-port", "--debug-port", "9876"])
 
 
+def test_parse_cli_transport_defaults_to_stdio():
+    ns = server._parse_cli_args([])
+    assert ns.transport == "stdio"
+    assert ns.host == "127.0.0.1"
+    assert ns.port == 8000
+
+
+def test_parse_cli_transport_http():
+    ns = server._parse_cli_args(["--transport", "http", "--host", "0.0.0.0", "--port", "9000"])
+    assert ns.transport == "http"
+    assert ns.host == "0.0.0.0"
+    assert ns.port == 9000
+
+
+def test_parse_cli_transport_rejects_invalid():
+    with pytest.raises(SystemExit):
+        with contextlib.redirect_stderr(io.StringIO()):
+            server._parse_cli_args(["--transport", "carrier-pigeon"])
+
+
+def test_main_http_transport_invokes_run_with_host_port(monkeypatch):
+    """--transport http should call mcp.run(transport='http', host=..., port=...)."""
+    monkeypatch.setattr(
+        sys, "argv",
+        ["drissionpage-mcp", "--transport", "http", "--host", "0.0.0.0", "--port", "9001"],
+    )
+    captured = {}
+
+    def fake_run(**kw):
+        captured.update(kw)
+
+    monkeypatch.setattr(server.mcp, "run", fake_run)
+    server.main()
+    assert captured["transport"] == "http"
+    assert captured["host"] == "0.0.0.0"
+    assert captured["port"] == 9001
+    assert captured["show_banner"] is False
+
+
+def test_main_stdio_transport_does_not_pass_host_port(monkeypatch):
+    """--transport stdio should NOT pass host/port to mcp.run (FastMCP would ignore them anyway)."""
+    monkeypatch.setattr(sys, "argv", ["drissionpage-mcp"])
+    captured = {}
+
+    def fake_run(**kw):
+        captured.update(kw)
+
+    monkeypatch.setattr(server.mcp, "run", fake_run)
+    server.main()
+    assert "transport" not in captured
+    assert "host" not in captured
+    assert "port" not in captured
+
+
 def test_main_rejects_out_of_range_port(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["drissionpage-mcp", "--debug-port", "70000"])
     buf = io.StringIO()

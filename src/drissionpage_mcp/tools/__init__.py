@@ -3,12 +3,12 @@
 DrissionPage MCP tools package.
 """
 
-from .page_management import register_page_management_tools
+from .actions import register_actions_tools
 from .element_operations import register_element_operations_tools
 from .javascript import register_javascript_tools
 from .network import register_network_tools
+from .page_management import register_page_management_tools
 from .screenshot import register_screenshot_tools
-from .actions import register_actions_tools
 
 __all__ = [
     "register_page_management_tools",

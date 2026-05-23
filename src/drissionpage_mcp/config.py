@@ -3,8 +3,9 @@
 DrissionPage MCP configuration.
 """
 
-from pydantic import BaseModel, Field
 from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class BrowserConfig(BaseModel):
@@ -29,7 +30,7 @@ class TimeoutConfig(BaseModel):
 class ServerConfig(BaseModel):
     """MCP server configuration."""
     name: str = Field("DrissionPage MCP", description="Server name")
-    version: str = Field("1.0.0", description="Server version")
+    version: str = Field("1.1.0", description="Server version")
     debug: bool = Field(False, description="Debug mode")
 
 
