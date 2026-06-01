@@ -8,7 +8,7 @@
 
 > A lean [Model Context Protocol](https://modelcontextprotocol.io/) server that gives LLM agents a browser, powered by [DrissionPage](https://github.com/g1879/DrissionPage). Alternative to `chrome-devtools-mcp` and `playwright-mcp` with a smaller surface area and Chinese-friendly defaults.
 
-基于 [DrissionPage](https://github.com/g1879/DrissionPage) 的浏览器自动化 MCP Server。**31 个核心工具**，覆盖浏览器/标签页/导航/元素/JS/CDP/网络监听/截图，适合 LLM Agent 驱动真实 Chromium 完成网页操作、抓取、调试与逆向。
+基于 [DrissionPage](https://github.com/g1879/DrissionPage) 的浏览器自动化 MCP Server。**44 个工具**（31 核心 + 3 WebSocket 帧 + 10 交互式断点调试），覆盖浏览器/标签页/导航/元素/JS/CDP/网络监听/截图，以及**逐帧抓 WebSocket** 和**交互式断点单步 + 现场读变量**，适合 LLM Agent 驱动真实 Chromium 完成网页操作、抓取、调试与逆向。
 
 > ⚠️ **当前仅源码安装**：PyPI 上的 `drissionpage-mcp` 包名已被另一个无关项目（`jumodada/DrissionMCP`）占用。本项目的 PyPI 名计划为 `drissionpage-mcp-server`，尚未发布。**请按下面的源码方式安装，不要执行 `pip install drissionpage-mcp`**。
 
@@ -94,7 +94,7 @@ drissionpage-mcp --transport http --host 0.0.0.0 --port 8000
 - 工具调用中传入的 `debug_port` 必须与实例已固定的端口一致，否则报错。
 - `dp_connect_browser({"address": "127.0.0.1:9223"})` 中地址端口同样必须一致。
 
-## 🛠 工具总览（31 个）
+## 🛠 工具总览（44 个）
 
 | 分类 | 工具 |
 |---|---|
@@ -108,8 +108,39 @@ drissionpage-mcp --transport http --host 0.0.0.0 --port 8000
 | **网络** | `dp_listen_start` · `dp_listen_wait` · `dp_capture_api` |
 | **执行** | `dp_run_js` · `dp_run_js_on_ele` · `dp_run_cdp` |
 | **动作** | `dp_scroll` · `dp_handle_alert` |
+| **WebSocket 帧** | `dp_ws_listen_start` · `dp_ws_get_frames` · `dp_ws_stop` |
+| **断点调试** | `dp_debugger_enable` · `dp_set_breakpoint` · `dp_set_xhr_breakpoint` · `dp_remove_breakpoint` · `dp_debugger_status` · `dp_resume` · `dp_step_over` · `dp_step_into` · `dp_step_out` · `dp_eval_on_frame` |
 
 并暴露一个 MCP Resource：`browser://status` 返回当前所有浏览器会话的实时状态。
+
+### WebSocket 帧抓取（逆向长连接 / 直播流 / 二进制协议）
+
+`dp_listen_*` 抓的是 HTTP 请求/响应包，**不含** WebSocket 帧。这三个工具通过订阅 CDP 事件（`Network.webSocketFrameReceived/Sent`）把每一帧落进服务端缓冲区：
+
+```text
+call dp_ws_listen_start                       # 开始抓帧（Network.enable + 挂回调）
+# … 触发页面 WS 流量 …
+call dp_ws_get_frames {"limit": 50}           # 读帧：方向/opcode/长度/payload(自动解 JSON)，按 wsid 分组
+call dp_ws_stop                               # 停止并清空缓冲
+```
+
+### 交互式断点单步（现场读签名输入）
+
+`dp_run_cdp` 只能发 CDP 命令、收不到 `Debugger.paused` 事件，所以单独做了这一组：订阅暂停事件并把暂停态留在服务端，提供「设断点 → 看调用栈 → 单步 → 现场求值」的完整闭环。
+
+```text
+call dp_debugger_enable
+call dp_set_xhr_breakpoint {"url_substring": "/api/sign"}   # 或 dp_set_breakpoint 按 url+行号
+# … 触发请求，命中即暂停 …
+call dp_debugger_status                                      # 是否暂停 + 当前调用栈
+call dp_eval_on_frame {"expression": "JSON.stringify(arguments)"}  # ★ 断点现场读变量
+call dp_step_over        # / dp_step_into / dp_step_out / dp_resume（默认等下一次暂停并回传新栈）
+```
+
+> **注意**：
+> - **WS payload 编码**：`opcode == 1` 为 UTF-8 文本（会尝试解 JSON）；`opcode != 1`（二进制帧）时 CDP 返回的 `payloadData` 是 **base64 字符串**，需自行解码——这是 CDP 协议行为，非本工具处理。
+> - **WS origin 限制**：WS 必须由**正常 origin 页面**发起（`data:` URL 是 opaque origin，Chrome 会拦截其 WebSocket，抓不到帧）。
+> - **断点**：暂停期间渲染线程冻结，但 `Debugger.*` 命令走 CDP 控制通道仍可用，单步与 `evaluateOnCallFrame` 正常工作。
 
 ## 💡 推荐工作流
 

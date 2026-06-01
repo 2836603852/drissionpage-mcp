@@ -24,6 +24,40 @@ def get_session(browser_id: Optional[str] = None):
     return session
 
 
+def get_driver(tab):
+    """Return the tab's low-level CDP driver (exposes ``set_callback``).
+
+    DrissionPage routes every tab's Chrome DevTools Protocol traffic through a
+    persistent ``Driver`` object reachable as ``tab._driver``. ``run_cdp`` only
+    covers the request/response half of CDP; ``driver.set_callback(event, cb)``
+    is the supported hook for the *event* half (e.g. ``Debugger.paused``,
+    ``Network.webSocketFrameReceived``) that the stepping / WS tools rely on.
+    """
+    driver = getattr(tab, "_driver", None)
+    if driver is None or not hasattr(driver, "set_callback"):
+        raise DrissionPageMcpError(
+            "Active tab has no usable CDP driver (set_callback unavailable)"
+        )
+    return driver
+
+
+def tab_key(tab) -> str:
+    """Stable per-tab key used to bucket server-side CDP event state.
+
+    ``tab.tab_id`` is a *property* that resolves to ``self.driver`` and can raise
+    (e.g. BrowserConnectError on a disconnected tab), which a plain getattr
+    default would NOT catch — so guard explicitly before falling back to id().
+    """
+    for attr in ("tab_id", "_tab_id"):
+        try:
+            val = getattr(tab, attr, "")
+        except Exception:
+            val = ""
+        if val:
+            return str(val)
+    return str(id(tab))
+
+
 def resolve_tab_id(session, tab) -> Optional[str]:
     """Resolve a tab id from tab object and tracked session tabs."""
     tab_id = str(getattr(tab, "tab_id", "") or getattr(tab, "_tab_id", "")).strip()

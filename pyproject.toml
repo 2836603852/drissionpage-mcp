@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "drissionpage-mcp-server"
-version = "1.1.0"
-description = "MCP server for DrissionPage browser automation - Alternative to Chrome DevTools MCP and Playwright MCP"
+version = "1.2.1"
+description = "MCP server for DrissionPage browser automation + JS reverse engineering (WebSocket frames, interactive breakpoints) - Alternative to Chrome DevTools MCP and Playwright MCP"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"

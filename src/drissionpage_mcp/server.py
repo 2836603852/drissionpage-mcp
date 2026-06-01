@@ -24,11 +24,13 @@ from .browser_manager import browser_manager
 from .config import Config
 from .tools import (
     register_actions_tools,
+    register_debugger_tools,
     register_element_operations_tools,
     register_javascript_tools,
     register_network_tools,
     register_page_management_tools,
     register_screenshot_tools,
+    register_websocket_tools,
 )
 
 # Global runtime configuration.
@@ -95,7 +97,9 @@ def _register_all_tools():
     register_network_tools(mcp)
     register_actions_tools(mcp)
     register_screenshot_tools(mcp)
-    _log("[DrissionPage MCP] Lean mode: 31 core tools loaded")
+    register_websocket_tools(mcp)
+    register_debugger_tools(mcp)
+    _log("[DrissionPage MCP] 44 tools loaded (31 core + 3 ws-frame + 10 debugger)")
 
 
 # Register resources.
