@@ -33,6 +33,7 @@ class BrowserSession:
     debugger_address: Optional[str] = None
     active_tab_id: Optional[str] = None
     tabs: Dict[str, TabInfo] = field(default_factory=dict)
+    is_external: bool = False
 
     def update_tab_info(self):
         """Refresh tracked tab metadata."""
@@ -119,9 +120,8 @@ class BrowserManager:
             return None
 
     def _bind_debug_port(self, port: int) -> int:
-        """Bind the manager to a single fixed debug port."""
-        if port <= 0:
-            raise ValueError("Debug port must be a positive integer")
+        """Bind the runtime default port; explicit browser ports are independent."""
+        self._validate_debug_port(port)
         if self.fixed_debug_port is not None and self.fixed_debug_port != port:
             raise ValueError(
                 f"Debug port already fixed to {self.fixed_debug_port}; refusing to switch to {port}"
@@ -130,8 +130,15 @@ class BrowserManager:
             self.fixed_debug_port = int(port)
         return self.fixed_debug_port
 
+    @staticmethod
+    def _validate_debug_port(port: int) -> int:
+        """Validate a default or explicitly selected Chromium port."""
+        if not 1 <= port <= 65535:
+            raise ValueError("Debug port must be a positive integer in range 1-65535")
+        return port
+
     def get_debug_port(self) -> int:
-        """Get the fixed debug port, allocating it once if needed."""
+        """Get the runtime default port, allocating it once if needed."""
         configured_port = getattr(self.config.browser, "debug_port", None)
         if configured_port is not None:
             return self._bind_debug_port(int(configured_port))
@@ -186,7 +193,7 @@ class BrowserManager:
     ) -> BrowserSession:
         """Create a new browser instance."""
 
-        selected_port = self.get_debug_port() if debug_port is None else self._bind_debug_port(int(debug_port))
+        selected_port = self.get_debug_port() if debug_port is None else self._validate_debug_port(int(debug_port))
 
         browser_config = BrowserConfig(debug_port=selected_port)
 
@@ -220,16 +227,20 @@ class BrowserManager:
 
     def connect_browser(
         self,
-        address: str,
+        address: Optional[str] = None,
         browser_id: Optional[str] = None
     ) -> BrowserSession:
-        """Connect to an existing browser."""
+        """Attach to an existing browser without changing the runtime default."""
+        if address is None:
+            address = f"127.0.0.1:{self.get_debug_port()}"
         port = self._extract_port(address)
         if port is None:
             raise ValueError(f"Invalid debugger address: {address}")
-        self._bind_debug_port(port)
+        self._validate_debug_port(port)
 
-        browser = Chromium(addr_or_opts=address)
+        # Connecting must never launch a browser when the address is unreachable.
+        options = ChromiumOptions().set_address(address).existing_only()
+        browser = Chromium(addr_or_opts=options)
         self._apply_alert_policy(browser, self.config.browser)
 
         session_id = browser_id or f"browser_{uuid.uuid4().hex[:8]}"
@@ -238,6 +249,7 @@ class BrowserManager:
             browser=browser,
             debug_port=port,
             debugger_address=address,
+            is_external=True,
         )
 
         # Initialize tabs.
@@ -343,8 +355,10 @@ class BrowserManager:
         return False
 
     def close_all(self):
-        """Close all browser sessions."""
+        """Release sessions on shutdown, preserving externally owned browsers."""
         for session in list(self.sessions.values()):
+            if session.is_external:
+                continue
             try:
                 session.browser.quit()
             except Exception:

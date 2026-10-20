@@ -22,6 +22,7 @@ from drissionpage_mcp.tools.element_operations import (
 from drissionpage_mcp.tools.javascript import RunJsParams, register_javascript_tools
 from drissionpage_mcp.tools.network import register_network_tools
 from drissionpage_mcp.tools.page_management import (
+    ConnectBrowserParams,
     HistoryActionParams,
     NavigateParams,
     register_page_management_tools,
@@ -124,6 +125,40 @@ def _install_fake_session(tab: _FakeTab) -> BrowserSession:
 
 
 # ---------- tests ----------
+
+
+@pytest.mark.parametrize("params", [None, ConnectBrowserParams()])
+def test_connect_browser_accepts_omitted_address(tools, monkeypatch, params):
+    calls = []
+
+    def connect(address, browser_id):
+        calls.append((address, browser_id))
+        return SimpleNamespace(browser_id="attached", debug_port=9223,
+                               debugger_address="127.0.0.1:9223", tabs={})
+
+    monkeypatch.setattr(browser_manager, "connect_browser", connect)
+    out = _run(tools["dp_connect_browser"](params))
+    assert out["success"] is True
+    assert out["debug_port"] == 9223
+    assert calls == [(None, None)]
+
+
+def test_connect_browser_forwards_custom_address_and_id(tools, monkeypatch):
+    calls = []
+
+    def connect(address, browser_id):
+        calls.append((address, browser_id))
+        return SimpleNamespace(browser_id=browser_id, debug_port=38318,
+                               debugger_address=address, tabs={})
+
+    monkeypatch.setattr(browser_manager, "connect_browser", connect)
+    out = _run(tools["dp_connect_browser"](
+        ConnectBrowserParams(address="127.0.0.1:38318", browser_id="shop")
+    ))
+    assert out["success"] is True
+    assert out["browser_id"] == "shop"
+    assert out["debugger_address"] == "127.0.0.1:38318"
+    assert calls == [("127.0.0.1:38318", "shop")]
 
 def test_navigate_returns_success_and_url(tools):
     tab = _FakeTab(url="https://old.example.com")

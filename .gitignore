@@ -36,6 +36,8 @@ htmlcov/
 Thumbs.db
 
 # Local development artifacts
+.local/
+.tmp/
 .env
 *.log
 debug_*

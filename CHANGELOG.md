@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Keep 9223 as the CLI default Chromium port while allowing per-browser custom
+  ports and debugger addresses without rebinding that default.
+- `dp_connect_browser` accepts omitted parameters, attaches only to an existing
+  browser, and preserves externally connected browsers when the MCP server exits.
+
 ## [1.2.1] - 2026-06-01
 
 ### Fixed (debugger / websocket — AI-usability hardening)

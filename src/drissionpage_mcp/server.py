@@ -68,7 +68,7 @@ async def app_lifespan(server: FastMCP):
 
     _log(f"[{config.server.name}] Server started v{config.server.version}")
     _log(f"[{config.server.name}] DrissionPage-based browser automation MCP server")
-    _log(f"[{config.server.name}] Runtime debug port fixed to {runtime_debug_port}")
+    _log(f"[{config.server.name}] Default debug port: {runtime_debug_port} (explicit browser addresses supported)")
 
     yield {
         "config": config,
@@ -131,7 +131,7 @@ def _parse_cli_args(argv: Optional[list] = None) -> argparse.Namespace:
         default=None,
         metavar="PORT",
         help=(
-            f"Fix the runtime Chromium debug port (1-65535). "
+            f"Set the default Chromium debug port (1-65535). "
             f"Defaults to {DEFAULT_DEBUG_PORT} when neither --debug-port nor "
             "--auto-port is supplied."
         ),

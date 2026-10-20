@@ -69,7 +69,7 @@ drissionpage-mcp [--debug-port PORT | --auto-port]
                  [--host HOST] [--port PORT]
 
 Chromium 调试端口（互斥）:
-  --debug-port PORT   固定 Chromium 调试端口 (1-65535)，默认 9223
+  --debug-port PORT   设置默认 Chromium 调试端口 (1-65535)，默认 9223
   --auto-port         启动时自动挑选空闲端口（与 --debug-port 互斥）
 
 MCP 传输层:
@@ -90,9 +90,17 @@ drissionpage-mcp --transport http --host 0.0.0.0 --port 8000
 
 ## 📐 端口规则
 
-- 每个 MCP 实例在启动时**固定一个**调试端口，全程复用，不中途切换。
-- 工具调用中传入的 `debug_port` 必须与实例已固定的端口一致，否则报错。
-- `dp_connect_browser({"address": "127.0.0.1:9223"})` 中地址端口同样必须一致。
+- 不传地址或端口时，使用启动时确定的默认端口；不带启动参数时默认是 `9223`。
+- `dp_new_browser` 可以通过 `debug_port` 显式指定其他端口，不改变默认端口。
+- `dp_connect_browser` 可以连接任意明确指定的已有浏览器地址，例如：
+
+  ```json
+  {"params": {"address": "127.0.0.1:38318", "browser_id": "shop"}}
+  ```
+
+- 同一个 MCP 可以管理多个地址，后续操作通过 `browser_id` 选择目标。
+- `dp_connect_browser` 不传参数时连接默认地址；连接失败会报错，不会另起浏览器。
+- MCP 退出时保留通过 `dp_connect_browser` 接入的浏览器；显式调用 `dp_close_browser` 才关闭它。
 
 ## 🛠 工具总览（44 个）
 

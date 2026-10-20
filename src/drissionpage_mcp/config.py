@@ -12,7 +12,9 @@ class BrowserConfig(BaseModel):
     """Browser configuration."""
     debug_port: Optional[int] = Field(
         None,
-        description="Optional default debugging port for the current MCP runtime; if omitted, the first chosen port is reused within the runtime",
+        ge=1,
+        le=65535,
+        description="Optional runtime default debugging port; explicit tool addresses and ports do not change this default",
     )
     auto_handle_alert: bool = Field(True, description="Automatically handle JavaScript dialogs")
     auto_accept_alert: bool = Field(True, description="Accept dialogs when auto-handling is enabled")

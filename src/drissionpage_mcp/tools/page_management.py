@@ -17,15 +17,17 @@ class NewBrowserParams(BaseModel):
     proxy: Optional[str] = Field(None, description="Proxy server address")
     debug_port: Optional[int] = Field(
         None,
-        description="Debugger port for the current MCP runtime. If omitted, reuse the runtime-fixed port.",
+        ge=1,
+        le=65535,
+        description="Optional Chromium debugger port. If omitted, use the runtime default (normally 9223); explicit ports do not change that default.",
     )
 
 
 class ConnectBrowserParams(BaseModel):
     """Connect browser parameters"""
-    address: str = Field(
-        ...,
-        description="Browser debugger address. Its port must match the runtime-fixed MCP port, e.g. 127.0.0.1:9223",
+    address: Optional[str] = Field(
+        None,
+        description="Existing browser debugger address, e.g. 127.0.0.1:38318. If omitted, connect to the runtime default (normally 127.0.0.1:9223). Does not launch a browser or change the default port.",
     )
     browser_id: Optional[str] = Field(None, description="Browser instance ID")
 
@@ -185,8 +187,10 @@ def register_page_management_tools(mcp):
 
     @mcp.tool()
     @tool_handler
-    async def dp_connect_browser(params: ConnectBrowserParams) -> dict:
+    async def dp_connect_browser(params: ConnectBrowserParams = None) -> dict:
         """Connect to an existing browser by debugger address."""
+        if params is None:
+            params = ConnectBrowserParams()
         session = browser_manager.connect_browser(
             address=params.address,
             browser_id=params.browser_id,
